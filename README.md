@@ -23,9 +23,9 @@ In order to detect the lane lines in a video stream we must accomplish the folow
 
 - **Color Transform** - We use a set of image manipulation techniques to accentuate certain features like lane lines. We use color space transformations, like from RGB to HLS, channel separation, like separating the S channel from the HLS image and image gradient to allow us to identify the desired lines.
 
-- **Perspective Transform** - We apply a "bird’s-eye view transform" that let's us view a lane from above and thus mesure its curvature and respective radious.
+- **Perspective Transform** - We apply a "bird’s-eye view transform" that let's us view a lane from above and thus identify the lane lines, mesure its curvature and respective radius.
 
-- **Lane Pixel Detection** - We then analyse the transformed image and try to detect the lane pixels. We use a series of windows and identify the lane lines by finding the peeks in a histogram of eah window.
+- **Lane Pixel Detection** - We then analyse the transformed image and try to detect the lane pixels. We use a series of windows and identify the lane lines by finding the peeks in a histogram of each window's.
 
 - **Image augmentation** - We add a series of overlays to the image to: identify the lane lines, show the "bird's eye view" perspective, show the location of the rectangle windows where the lane pixels are and finaly metrics on the radius of curvature and distance to the center of the road.
 
@@ -78,13 +78,12 @@ Here's one example:
 
 ## Color Transform
 
-Here we use a series of image manipulation techniquest to detect the edges of an image
+Here we use a series of image manipulation techniquest to detect the edges, lines, of an image
 
 We start by getting the **gradient absolute value** using `OpenCV` Sobel operator
 
 ```python
 sobel = np.absolute(cv2.Sobel(image, cv2.CV_64F, 1, 0, ksize=sobel_ksize))
-x = cv2.Sobel(image, cv2.CV_64F, 1, 0, ksize=sobel_ksize)
 ```
 
 We then calculate the **gradient magnitude**
@@ -112,6 +111,9 @@ Finally we extract the `S` channel from the `HLS` color space and apply a thresh
 hls = cv2.cvtColor(np.copy(image), cv2.COLOR_RGB2HLS).astype(np.float)
 # Separate and get the S channel
 s = hls[:, :, 2]
+
+mask = np.zeros_like(image)
+mask[(image >= threshold[0]) & (image <= threshold[1])] = 1
 ```
 
 We apply all these transformations so we can identify the edges on the lane lines, here's an example:
@@ -122,7 +124,7 @@ We apply all these transformations so we can identify the edges on the lane line
 
 ## Perspective Transform
 
-I defined a matrix of source and destination points in the images as to transform them to the "bird's eye view" using `OpenCV` `getPerspectiveTransform` function.
+We defined a matrix of source and destination points in the images as to transform them to the "bird's eye view" using `OpenCV` `getPerspectiveTransform` function.
 
 Here you can see the defined vertices for the "region of interest"
 
@@ -166,7 +168,7 @@ Here's an example of the transformation:
 The next challenge is, by using the transformed image, identify the lane line pixels.
 To accomplish this we'll use a method called "Peaks in a Histogram" where we analyse the histogram of section of the image, window, and identify the peaks which represent the location of the lane lines.
 
-To abstract this we've create a few classes:
+To abstract this we've create a two classes:
 
 - **SlidingWindow** - Where we represent "these" sections of the image where it's more likely to find a lane line, the "hot" pixels. The class defines the top and bottom coordinates for the vertices of the rectanglar window
 
@@ -183,13 +185,13 @@ Here's an example of the lane lines detected:
 
 In order to augment the video, and its respective frames, we've created a series of overlays to add additional information to the stream.
 
-**In the top left corner** - Adds a representation of the windows in the transformed image and identifies the lanes and its curvature
+**Top left corner** - Adds a representation of the windows in the transformed image and identifies the lanes and its curvature
 
-**In the top center** - A "bird's eye" view with the lane identified
+**Top center** - A "bird's eye" view with the lane identified
 
-**In the top right corner** - Metrics on the radius of curvature and distance to the center line
+**Top right corner** - Metrics on the radius of curvature and distance to the center line
 
-**in the lower two thirds** - The actual image with the lane boundaries identified and colored for effect.
+**Lower two thirds** - The actual image with the lane boundaries identified and colored for effect.
 
 Here's an example augmented image:
 
@@ -253,7 +255,7 @@ self.right_lane = LaneLine(nonzero[1][right_lane_inds], nonzero[0][right_lane_in
 
 ---
 
-We then run the pipeline for each of the frames in the test images:
+We then run the pipeline for each of the test images:
 
 ```python
 for image_path in glob.glob('test_images/test*.jpg'):
@@ -263,7 +265,7 @@ for image_path in glob.glob('test_images/test*.jpg'):
     overlay = pipeline.run(calibrated)
 ```
 
-And finally for each of the frames of the video:
+And finally for each of the frames in the video:
 
 ```python
 from moviepy.editor import VideoFileClip
