@@ -116,7 +116,47 @@ s = hls[:, :, 2]
 
 We apply all these transformations so we can identify the edges on the lane lines, here's an example:
 
-![alt-text-1](output_images/color-transform-example.png "Original | Calibrated")
+![alt-text-1](output_images/color-transform-example.png)
+
+> For full implementation details please see the [jupyter notebook](Advanced-Lane-Finding.ipynb)
+
+## Perspective Transform
+
+I defined a matrix of source and destination points in the images as to transform them to the "bird's eye view" using `OpenCV` `getPerspectiveTransform` function. 
+
+Here you can see the defined vertices for the "region of interest"
+
+```python
+height = image.shape[0]
+width = image.shape[1]
+# Vertices coordinates in the source image
+s1 = [width // 2 - 76, height * 0.625]
+s2 = [width // 2 + 76, height * 0.625]
+s3 = [-100, height]
+s4 = [width + 100, height]
+src = np.float32([s1, s2, s3, s4])
+# Vertices coordinates in the destination image
+d1 = [100, 0]
+d2 = [width - 100, 0]
+d3 = [100, height]
+d4 = [width - 100, height]
+dst = np.float32([d1, d2, d3, d4])
+```
+
+And here the actual transformation:
+
+```python
+# Given src and dst points we calculate the perspective transform matrix
+M = cv2.getPerspectiveTransform(src, dst)
+# Warp the image
+warped = cv2.warpPerspective(image, M, (width, height))
+# We also calculate the oposite transform
+unwrap_m = cv2.getPerspectiveTransform(dst, src)
+```
+
+Here's an example of the transformation:
+
+![alt-text-1](output_images/perspective-transform-example.png)
 
 > For full implementation details please see the [jupyter notebook](Advanced-Lane-Finding.ipynb)
 
