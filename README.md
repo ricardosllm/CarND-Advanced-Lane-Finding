@@ -66,12 +66,12 @@ if f:
 Finally we calibrate the camera and get our matrix and distortion 
 
 ```python
-matrix, dist = cv2.calibrateCamera(pattern_points, image_points,image_size, None, None)
+matrix, dist = cv2.calibrateCamera(pattern_points, image_points, image_size, None, None)
 ```
 
 In some images it was not possible to identify the corners, so we'll use them to test the calibration:
 Here's one example:
 
-![alt-text-1](output_images/chessboard-original.png "Original") ![alt-text-2](output_images/chessboard-calibrated.png "Calibrated")
+![alt-text-1](output_images/chessboard-original.png "Original | Calibrated")
 
-> For full implementation details please see the [jupyter notebook](Advanced-Lane-Finding.ipnyb)
+> For full implementation details please see the [jupyter notebook](Advanced-Lane-Finding.ipynb)
