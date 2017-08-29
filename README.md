@@ -75,3 +75,49 @@ Here's one example:
 ![alt-text-1](output_images/chessboard-original.png "Original | Calibrated")
 
 > For full implementation details please see the [jupyter notebook](Advanced-Lane-Finding.ipynb)
+
+## Color Transform
+
+Here we use a series of image manipulation techniquest to detect the edges of an image
+
+We start by getting the **gradient absolute value** using `OpenCV` Sobel operator
+
+```python
+sobel = np.absolute(cv2.Sobel(image, cv2.CV_64F, 1, 0, ksize=sobel_ksize))
+x = cv2.Sobel(image, cv2.CV_64F, 1, 0, ksize=sobel_ksize)
+```
+
+We then calculate the **gradient magnitude**
+
+```python
+x = cv2.Sobel(image, cv2.CV_64F, 1, 0, ksize=sobel_ksize)
+y = cv2.Sobel(image, cv2.CV_64F, 0, 1, ksize=sobel_ksize)
+
+magnit = np.sqrt(x**2 + y**2)
+```
+
+And the **gradient direction**
+
+```python
+x = cv2.Sobel(image, cv2.CV_64F, 1, 0, ksize=sobel_ksize)
+y = cv2.Sobel(image, cv2.CV_64F, 0, 1, ksize=sobel_ksize)
+
+direct = np.arctan2(np.absolute(y), np.absolute(x))
+```
+
+Finally we extract the `S` channel from the `HLS` color space and apply a threshold to it
+
+```python
+# Convert to HLS space
+hls = cv2.cvtColor(np.copy(image), cv2.COLOR_RGB2HLS).astype(np.float)
+# Separate and get the S channel
+s = hls[:, :, 2]
+```
+
+We apply all these transformations so we can identify the edges on the lane lines, here's an example:
+
+![alt-text-1](output_images/color-transform-example.png "Original | Calibrated")
+
+> For full implementation details please see the [jupyter notebook](Advanced-Lane-Finding.ipynb)
+
+
