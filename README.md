@@ -9,9 +9,9 @@ We'll be using image manipulation techniques to extract enough information from 
 ## Project Structure
 
 - `camera_cal/` Directory with calibration images
-- `test_images/` Directory with test images 
+- `test_images/` Directory with test images
 - `output_images/` Directory with test images with augmented overlay
-- `videos/` Directory with input and output videos 
+- `videos/` Directory with input and output videos
 - `Advanced-Lane-Finding.ipnyb` Jupyter notebook with all the project code and example images
 - `README.md` Projecte writeup (you're reading it)
 
@@ -60,10 +60,10 @@ In the case where we can find the corners we add them to our `pattern_points` an
 if f:
     pattern_points.append(pattern)
     image_points.append(corners)
-    image_size = (image.shape[1], image.shape[0])    
+    image_size = (image.shape[1], image.shape[0])
 ```
 
-Finally we calibrate the camera and get our matrix and distortion 
+Finally we calibrate the camera and get our matrix and distortion
 
 ```python
 matrix, dist = cv2.calibrateCamera(pattern_points, image_points, image_size, None, None)
@@ -122,7 +122,7 @@ We apply all these transformations so we can identify the edges on the lane line
 
 ## Perspective Transform
 
-I defined a matrix of source and destination points in the images as to transform them to the "bird's eye view" using `OpenCV` `getPerspectiveTransform` function. 
+I defined a matrix of source and destination points in the images as to transform them to the "bird's eye view" using `OpenCV` `getPerspectiveTransform` function.
 
 Here you can see the defined vertices for the "region of interest"
 
@@ -166,9 +166,9 @@ Here's an example of the transformation:
 The next challenge is, by using the transformed image, identify the lane line pixels.
 To accomplish this we'll use a method called "Peaks in a Histogram" where we analyse the histogram of section of the image, window, and identify the peaks which represent the location of the lane lines.
 
-To abstract this we've create a few classes: 
+To abstract this we've create a few classes:
 
-- **SlidingWindow** - Where we represent "these" sections of the image where it's more likely to find a lane line, the "hot" pixels. The class defines the top and bottom coordinates for the vertices of the rectanglar window 
+- **SlidingWindow** - Where we represent "these" sections of the image where it's more likely to find a lane line, the "hot" pixels. The class defines the top and bottom coordinates for the vertices of the rectanglar window
 
 - **LaneLine** - This class represents each of the lane lines in the image, in this case the `left` and `right` lines. It calculates the equation of the curve of the line and returns `radius_of_curvature` and `camera_distance` from the center line. This class also includes all the assumptions like the width of the lanes, `3.7` meters, and the length of the lane in the image, `30` meters
 
@@ -200,7 +200,7 @@ Here's an example augmented image:
 
 ## Pipeline
 
-Finally we put it all together with the `Pipeline` class. 
+Finally we put it all together with the `Pipeline` class.
 
 We start by getting the edges of the lane lines
 
@@ -224,20 +224,20 @@ Initialize the `left` and `right` `SlidingWindow` instances with a total of `9` 
 
 ```python
 for i in range(self.nwindows):
-    # initialize each Window object 
+    # initialize each Window object
     if len(self.left_wins) > 0:
         l_x_center = self.left_wins[-1].x
         r_x_center = self.right_wins[-1].x
     else:
         l_x_center = np.argmax(histogram[:self.width // 2])
         r_x_center = np.argmax(histogram[self.width // 2:]) + self.width // 2
-            
-    left_win = SlidingWindow(y_low=self.height - i * window_height, 
-                             y_high=self.height - (i + 1) * window_height, 
+
+    left_win = SlidingWindow(y_low=self.height - i * window_height,
+                             y_high=self.height - (i + 1) * window_height,
                              x_center=l_x_center)
-    
-    right_win = SlidingWindow(y_low=self.height - i * window_height, 
-                              y_high=self.height - (i + 1) * window_height, 
+
+    right_win = SlidingWindow(y_low=self.height - i * window_height,
+                              y_high=self.height - (i + 1) * window_height,
                               x_center=r_x_center)
 
 ```
@@ -258,7 +258,7 @@ We then run the pipeline for each of the frames in the test images:
 ```python
 for image_path in glob.glob('test_images/test*.jpg'):
     image = mpimg.imread(image_path)
-    calibrated = calibrated_camera(image) 
+    calibrated = calibrated_camera(image)
     pipeline = Pipeline(calibrated)
     overlay = pipeline.run(calibrated)
 ```
@@ -272,7 +272,7 @@ def build_augmented_video(video_path_prefix):
     output_video_name = 'videos/{}_augmented.mp4'.format(video_path_prefix)
     input_video = VideoFileClip("videos/{}.mp4".format(video_path_prefix))
 
-    calibrated = calibrated_camera(input_video.get_frame(0)) 
+    calibrated = calibrated_camera(input_video.get_frame(0))
     pipeline = Pipeline(calibrated)
 
     output_video = input_video.fl_image(pipeline.run)
@@ -281,3 +281,24 @@ def build_augmented_video(video_path_prefix):
 We use [`moviepy`](http://zulko.github.io/moviepy/) lib to read each frame of the video and subsquently save each of the augmented frames into an "augmented" video.
 
 You can find a GIF of the project video "augmented" in the top of this file.
+
+## Discussion
+
+As we can see by the [project video](videos/project_video_augmented.mp4) the pipeline works well for a "simple" video stream,  This is becase there's litte changes in elevation, lighting or any steep bends.
+
+---
+
+If we analyse the slightly harder video:
+
+![alt text](videos/challenge_video_augmented.gif "Result")
+
+We can clearly see that the pipeline start to struggle, this is because this video adds features like a concrete seperator that projects a shadow into the lane and paralel to the lane lines. Close to the camera the model works relatively well but near the escape point we can see the lane detection starting to fail.
+
+---
+
+If we then look at the more challenging video:
+
+![alt text](videos/harder_challenge_video_augmented.gif "Result")
+
+It's obvious that the model does not perform well. The lane boundary is "all over the place" and could not keep the car inside the lane.
+This is most likely due to the nature of the road, single line for each traffic direction, steeper bends and a higher proximity to the side of the road.
