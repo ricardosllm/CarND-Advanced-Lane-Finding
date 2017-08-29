@@ -19,17 +19,17 @@ We'll be using image manipulation techniques to extract enough information from 
 
 In order to detect the lane lines in a video stream we must accomplish the folowing:
 
-- **Camera Calibration** Calibrate the camera to correct for image distortions. For this we use a set of chessboard images, knowing the distance and angles between common features like corners, we can calculate the tranformation functions and apply them to the video frames.
+- **Camera Calibration** - Calibrate the camera to correct for image distortions. For this we use a set of chessboard images, knowing the distance and angles between common features like corners, we can calculate the tranformation functions and apply them to the video frames.
 
-- **Color Transform** We use a set of image manipulation techniques to accentuate certain features like lane lines. We use color space transformations, like from RGB to HLS, channel separation, like separating the S channel from the HLS image and image gradient to allow us to identify the desired lines.
+- **Color Transform** - We use a set of image manipulation techniques to accentuate certain features like lane lines. We use color space transformations, like from RGB to HLS, channel separation, like separating the S channel from the HLS image and image gradient to allow us to identify the desired lines.
 
-- **Perspective Transform** We apply a "bird’s-eye view transform" that let's us view a lane from above and thus mesure its curvature and respective radious.
+- **Perspective Transform** - We apply a "bird’s-eye view transform" that let's us view a lane from above and thus mesure its curvature and respective radious.
 
-- **Lane Pixel Detection** We then analyse the transformed image and try to detect the lane pixels. We use a series of windows and identify the lane lines by finding the peeks in a histogram of eah window.
+- **Lane Pixel Detection** - We then analyse the transformed image and try to detect the lane pixels. We use a series of windows and identify the lane lines by finding the peeks in a histogram of eah window.
 
-- **Image augmentation** We add a series of overlays to the image to: identify the lane lines, show the "bird's eye view" perspective, show the location of the rectangle windows where the lane pixels are and finaly metrics on the radius of curvature and distance to the center of the road.
+- **Image augmentation** - We add a series of overlays to the image to: identify the lane lines, show the "bird's eye view" perspective, show the location of the rectangle windows where the lane pixels are and finaly metrics on the radius of curvature and distance to the center of the road.
 
-- **Pipeline** We finally put it all together in a pipeline so we can apply it to the video stream.
+- **Pipeline** - We finally put it all together in a pipeline so we can apply it to the video stream.
 
 ## Camera Calibration
 
@@ -161,3 +161,36 @@ Here's an example of the transformation:
 > For full implementation details please see the [jupyter notebook](Advanced-Lane-Finding.ipynb)
 
 
+## Lane Pixel Detection
+
+The next challenge is, by using the transformed image, identify the lane line pixels.
+To accomplish this we'll use a method called "Peaks in a Histogram" where we analyse the histogram of section of the image, window, and identify the peaks which represent the location of the lane lines.
+
+To abstract this we've create a few classes: 
+
+- **SlidingWindow** - Where we represent "these" sections of the image where it's more likely to find a lane line, the "hot" pixels. The class defines the top and bottom coordinates for the vertices of the rectanglar window 
+
+- **LaneLine** - This class represents each of the lane lines in the image, in this case the `left` and `right` lines. It calculates the equation of the curve of the line and returns `radius_of_curvature` and `camera_distance` from the center line. This class also includes all the assumptions like the width of the lanes, `3.7` meters, and the length of the lane in the image, `30` meters
+
+Here's an example of the lane lines detected:
+
+![alt-text-1](output_images/lane-detection-example-o.png) ![alt-text-2](output_images/lane-detection-example.png)
+
+> please do see the [jupyter notebook](Advanced-Lane-Finding.ipynb) for more details.
+
+
+## Image augmentation
+
+In order to augment the video, and its respective frames, we've created a series of overlays to add additional information to the stream.
+
+**In the top left corner** - Adds a representation of the windows in the transformed image and identifies the lanes and its curvature
+
+**In the top center** - A "bird's eye" view with the lane identified
+
+**In the top right corner** - Metrics on the radius of curvature and distance to the center line
+
+**in the lower two thirds** - The actual image with the lane boundaries identified and colored for effect.
+
+Here's an example augmented image:
+
+![alt-text-1](output_images/augmented-image-example.png)
