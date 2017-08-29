@@ -194,3 +194,90 @@ In order to augment the video, and its respective frames, we've created a series
 Here's an example augmented image:
 
 ![alt-text-1](output_images/augmented-image-example.png)
+
+> For full implementation details please see the [jupyter notebook](Advanced-Lane-Finding.ipynb)
+
+
+## Pipeline
+
+Finally we put it all together with the `Pipeline` class. 
+
+We start by getting the edges of the lane lines
+
+```python
+edges = stack_edges(frame)
+```
+
+Then we apply the perspective transform
+
+```python
+transformed_egdes, _ = perspective_transform(edges)
+```
+
+Get the histogram of the transformed image which we'll use later to initialize the `SlidingWindow` objects
+
+```python
+histogram = np.sum(transformed_egdes[int(self.height / 2):, :], axis=0)
+```
+
+Initialize the `left` and `right` `SlidingWindow` instances with a total of `9` per side.
+
+```python
+for i in range(self.nwindows):
+    # initialize each Window object 
+    if len(self.left_wins) > 0:
+        l_x_center = self.left_wins[-1].x
+        r_x_center = self.right_wins[-1].x
+    else:
+        l_x_center = np.argmax(histogram[:self.width // 2])
+        r_x_center = np.argmax(histogram[self.width // 2:]) + self.width // 2
+            
+    left_win = SlidingWindow(y_low=self.height - i * window_height, 
+                             y_high=self.height - (i + 1) * window_height, 
+                             x_center=l_x_center)
+    
+    right_win = SlidingWindow(y_low=self.height - i * window_height, 
+                              y_high=self.height - (i + 1) * window_height, 
+                              x_center=r_x_center)
+
+```
+
+And lastely initialize each of the `left` and `right` `laneLine` instances
+
+```python
+self.left_lane = LaneLine(nonzero[1][left_lane_inds], nonzero[0][left_lane_inds], self.height, self.width)
+self.right_lane = LaneLine(nonzero[1][right_lane_inds], nonzero[0][right_lane_inds], self.height, self.width)
+```
+
+> For full implementation details please see the [jupyter notebook](Advanced-Lane-Finding.ipynb)
+
+---
+
+We then run the pipeline for each of the frames in the test images:
+
+```python
+for image_path in glob.glob('test_images/test*.jpg'):
+    image = mpimg.imread(image_path)
+    calibrated = calibrated_camera(image) 
+    pipeline = Pipeline(calibrated)
+    overlay = pipeline.run(calibrated)
+```
+
+And finally for each of the frames of the video:
+
+```python
+from moviepy.editor import VideoFileClip
+
+def build_augmented_video(video_path_prefix):
+    output_video_name = 'videos/{}_augmented.mp4'.format(video_path_prefix)
+    input_video = VideoFileClip("videos/{}.mp4".format(video_path_prefix))
+
+    calibrated = calibrated_camera(input_video.get_frame(0)) 
+    pipeline = Pipeline(calibrated)
+
+    output_video = input_video.fl_image(pipeline.run)
+```
+
+We use [`moviepy`](http://zulko.github.io/moviepy/) lib to read each frame of the video and subsquently save each of the augmented frames into an "augmented" video.
+
+You can find a GIF of the project video "augmented" in the top of this file.
